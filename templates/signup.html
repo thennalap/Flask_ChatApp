@@ -21,41 +21,45 @@
                     <span class="text-2">Let's get connected</span>
                 </div>
             </div>
-            <div class="back">
-                <!--<img class="backImg" src="images/backImg.jpg" alt="">-->
-                <div class="text">
-                    <span class="text-1">Complete miles of journey <br> with one step</span>
-                    <span class="text-2">Let's get started</span>
-                </div>
-            </div>
+           
         </div>
         <div class="forms">
-            <div class="form-content">
-                
+            <div class="form-content">               
                 
                 <div class="signup-form">
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            {% for msg in messages %}
+                                <div style="color: red;"><h5>{{msg}}</h5></div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
                     <div class="title">Signup</div>
-                    <form action="#">
+                    <form action="{{url_for('signup')}}" method="post">
                         <div class="input-boxes">
                             <div class="input-box">
                                 <i class="fas fa-user"></i>
-                                <input type="text" placeholder="Enter your name" required>
+                                <input type="text" placeholder="Enter your name" required name="name">
                             </div>
                             <div class="input-box">
                                 <i class="fas fa-phone"></i>
-                                <input type="password" placeholder="Enter your phone number" required>
+                                <input type="text" placeholder="Enter your phone number" required name="phone_number">
                             </div>
                             <div class="input-box">
                                 <i class="fas fa-envelope"></i>
-                                <input type="text" placeholder="Enter your email" required>
+                                <input type="email" placeholder="Enter your email" required name="email">
+                            </div>
+                            <div class="input-box">
+                                <i class="fas fa-user"></i>
+                                <input type="text" placeholder="Enter a username" required name="username">
                             </div>
                             <div class="input-box">
                                 <i class="fas fa-lock"></i>
-                                <input type="password" placeholder="Enter your password" required>
+                                <input type="password" placeholder="Enter your password" required name="password">
                             </div>
                             <div class="input-box">
                                 <i class="fas fa-lock"></i>
-                                <input type="password" placeholder="Confirm your password" required>
+                                <input type="password" placeholder="Confirm your password" required name="confirm_password">
                             </div>
 
                             <div class="button input-box">
