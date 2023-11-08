@@ -35,28 +35,37 @@
                 <div class="login-form">
                     <!-- <div class="title">We Chat</div> -->
                     <!-- <div style="background-color: red;height: 100px;width:100px"></div> -->
-                    {% with messages = get_flashed_messages() %}
-                        {% if messages %}
-                            {% for msg in messages %}
-                                <div><h6>{{msg}}</h6></div>
-                            {% endfor %}
-                        {% endif %}
-                    {% endwith %}
+                  
                     <div class="title">Login</div>
                     <form action="{{url_for('login')}}" method="post">
                         <div class="input-boxes">
                             <div class="input-box">
                                 <i class="fas fa-user"></i>
-                                <input type="text" placeholder="Enter your username" required>
+                                <input type="text" placeholder="Enter your username" required name="username">
                             </div>
                             <div class="input-box">
                                 <i class="fas fa-lock"></i>
-                                <input type="password" placeholder="Enter your password" required>
+                                <input type="password" placeholder="Enter your password" required name="password">
                             </div>
                             <div class="text"><a href="#">Forgot password?</a></div>
                             <div class="button input-box">
                                 <input type="submit" value="Submit">
                             </div>
+                            {% with messages = get_flashed_messages() %}
+                            {% if messages %}
+                            {% for msg in messages %}
+                            {% if msg == "Invalid Username" or "Invalid Password" %}
+                            <div style="color: red;">
+                                <span>{{msg}}</span>
+                            </div>
+                            {% else %}
+                            <div style="color: green;">
+                                <span>{{msg}}</span>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                            {% endif %}
+                            {% endwith %}
                             <div class="text sign-up-text">Don't have an account? <a href="signup">Sign Up Now</a>
                             </div>
                         </div>

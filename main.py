@@ -45,8 +45,27 @@ class Users(db.Model):
 def login():
     if request.method=='POST':
         username=request.form['username']
-        password=request.form['password']
-        print(username,password)
+        password_entered=request.form['password']
+        # Checking username entered if exists or not
+        user_exists=Users.query.filter_by(username=username).first()
+
+        # If user exists checking the passwords, with the entered password and hashed password using check_password _hash.
+        if user_exists:            
+            print("user exists")
+            name=user_exists.name
+            username=user_exists.username
+            password_hashed=user_exists.password
+            checking_password=check_password_hash(password_hashed,password_entered)
+            if checking_password == True:
+                
+                return redirect(url_for('chat_home'))
+            else:
+                flash("Invalid Password")
+                return redirect(url_for('login'))
+                
+        else:
+            flash("Invalid Username")
+            return redirect(url_for('login'))
     return render_template('login.html')
 
 @app.route('/signup',methods=['POST','GET'])
@@ -73,11 +92,11 @@ def signup():
         phone_number_exists=Users.query.filter_by(phone_number=phone_number).first()
         
 
-        #Password and confirm password checking
-        if password!=confirm_password:
-            flash("Password and Confirm Password must be same")
-            return redirect(url_for('signup'))
-        elif not re.fullmatch(pattern,email):
+        # Password and confirm password checking
+        # if password!=confirm_password:
+        #     flash("Password and Confirm Password must be same")
+        #     return redirect(url_for('signup'))
+        if not re.fullmatch(pattern,email):
             flash("Enter a valid email")
             return redirect(url_for('signup'))
         elif not re.fullmatch(password_pattern,password):
@@ -87,7 +106,7 @@ def signup():
             flash("Username already taken. Please select another")
             return redirect(url_for('signup'))
         elif phone_number_exists:
-            flash("Phne Number already exists. Please use another")
+            flash("Phone Number already exists. Please use another")
             return redirect(url_for('signup'))
         elif email_exists:
             flash("Email already exists. Please use another")
