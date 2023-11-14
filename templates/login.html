@@ -40,7 +40,7 @@
                     <form action="{{url_for('login')}}" method="post">
                         <div class="input-boxes">
                             <div class="input-box">
-                                <i class="fas fa-user"></i>
+                                <i class="fa fa-user"></i>
                                 <input type="text" placeholder="Enter your username" required name="username">
                             </div>
                             <div class="input-box">
@@ -54,15 +54,11 @@
                             {% with messages = get_flashed_messages() %}
                             {% if messages %}
                             {% for msg in messages %}
-                            {% if msg == "Invalid Username" or "Invalid Password" %}
+                            
                             <div style="color: red;">
                                 <span>{{msg}}</span>
                             </div>
-                            {% else %}
-                            <div style="color: green;">
-                                <span>{{msg}}</span>
-                            </div>
-                            {% endif %}
+                           
                             {% endfor %}
                             {% endif %}
                             {% endwith %}
