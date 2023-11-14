@@ -75,9 +75,6 @@ def login():
             checking_password=check_password_hash(password_hashed,password_entered)
             if checking_password == True:
                 session['username']=username
-                # all_users=Users.query.all()
-                # print(all_users)
-
                 return redirect(url_for('chat_home'))
             else:
                 flash("Invalid Password")
@@ -86,6 +83,10 @@ def login():
         else:
             flash("Invalid Username")
             return redirect(url_for('login'))
+        
+    else:
+        if "username" in session:
+            return redirect(url_for('chat_home'))
     return render_template('login.html')
 
 @app.route('/logout')
@@ -150,18 +151,18 @@ def signup():
             return redirect(url_for('login'))
     return render_template('signup.html')
 
-@app.route('/chat',methods=['POST','GET'])
-def chat():
-    from_user=session['username']
-    print(from_user)
-    return redirect(url_for('chat_home'))
+
 
 @app.route('/home',methods=['POST','GET'])
 def chat_home():
-    from_username=session['username']
-    user_exists=Users.query.filter_by(username=from_username).first()    
-    other_users=Users.query.filter(Users.username != from_username).all()
-    return render_template('chat_home.html',users=other_users,login_user=user_exists)
+    if "username" in session:
+        from_username=session['username']
+        user_exists=Users.query.filter_by(username=from_username).first()    
+        other_users=Users.query.filter(Users.username != from_username).all()
+        return render_template('chat_home.html',users=other_users,login_user=user_exists)
+    else:
+        flash("You are not logged in!!")
+        return redirect(url_for('login'))
 
 @app.route('/getMessages/<string:to_username>',methods=['POST','GET'])
 def get_all_messages(to_username):
