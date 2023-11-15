@@ -48,6 +48,7 @@ class Messages(db.Model):
         self.message_time=message_time
 
     def to_dict(self):
+        self.message_time=self.message_time.strftime("%d-%m-%Y %H:%M")
         data = {
             "id" : self.id,
             "from_user" : self.from_user,
@@ -89,12 +90,16 @@ def login():
             return redirect(url_for('chat_home'))
     return render_template('login.html')
 
+
+
 @app.route('/logout')
 def logout():
     if "username" in session:
         session.pop('username',None)
         flash("Log Out Successfully")   
     return redirect(url_for('login'))
+
+
 
 @app.route('/signup',methods=['POST','GET'])
 def signup():
@@ -117,8 +122,7 @@ def signup():
         email_exists=Users.query.filter_by(email=email).first()
 
         #check if phone number already exists
-        phone_number_exists=Users.query.filter_by(phone_number=phone_number).first()
-        
+        phone_number_exists=Users.query.filter_by(phone_number=phone_number).first()       
 
         # Password and confirm password checking
         # if password!=confirm_password:
@@ -156,22 +160,25 @@ def signup():
 @app.route('/home',methods=['POST','GET'])
 def chat_home():
     if "username" in session:
-        from_username=session['username']
+        from_username=session['username']        
         user_exists=Users.query.filter_by(username=from_username).first()    
         other_users=Users.query.filter(Users.username != from_username).all()
         return render_template('chat_home.html',users=other_users,login_user=user_exists)
     else:
         flash("You are not logged in!!")
         return redirect(url_for('login'))
+    
+    
 
-@app.route('/getMessages/<string:to_username>',methods=['POST','GET'])
-def get_all_messages(to_username):
-    # to_username = request.json.get('to_username')
+@app.route('/getMessages/',methods=['POST','GET'])
+def get_all_messages():
+    to_username = request.json.get('to_username')
     from_username = session['username']
     msgs=Messages.query.filter(Messages.from_user.in_([to_username,from_username]),Messages.to_user.in_([to_username,from_username])).all()  
     all_messages = []
     for msg in msgs:
-        all_messages.append(msg.to_dict())  
+        msg_dict = msg.to_dict()
+        all_messages.append(msg_dict)  
     return jsonify(all_messages)
 
 
@@ -182,7 +189,6 @@ def handle_connect():
     from_username=session['username']
     from_user=Users.query.filter_by(username=from_username).first()
     from_user_room_id=from_user.chat_room_id
-    print(from_user_room_id,"iddddddddddd")
     join_room(from_user_room_id)
     print("room joined")
     
@@ -194,31 +200,41 @@ def handle_message(payload):
     to_username = payload['to_username']
     message = payload['message']
     now = datetime.now()
-    # message_date_time = now.strftime("%d/%m/%Y %H:%M:%S")
+    formatted_time=now.strftime("%d-%m-%Y %H:%M")
+
+    #select from_user room id     
     from_user=Users.query.filter_by(username=from_username).first()
     from_user_room_id=from_user.chat_room_id
+
+    #select to_user room id
     to_user=Users.query.filter_by(username=to_username).first()
     to_user_room_id=to_user.chat_room_id
+
+    #saving message to database
     msg=Messages(from_username,to_username,message,now)
     db.session.add(msg)
     db.session.commit()
     print("Message added Succesfully")  
-    print(message,from_username,to_username)
-    chat_message={
-        'message':message,
-        'from_username':from_username,
-        'to_username':to_username
 
-    }    
-    send(chat_message,broadcast=True,room=from_user_room_id)
-    send(chat_message,broadcast=True,room=to_user_room_id)
+    chat_message={
+        'content':message,
+        'from_user':from_username,
+        'to_user':to_username,
+        'message_time':formatted_time
+    }
+    send(chat_message,to=from_user_room_id)
+    send(chat_message,to=to_user_room_id)
 
     
 
 @socketio.on('disconnect')
 def handle_disconnect():
     from_username=session['username']
-    leave_room(from_username)
+    from_user=Users.query.filter_by(username=from_username).first()
+    from_user_room_id=from_user.chat_room_id
+    leave_room(from_user_room_id)
+
+    
 
 
 if __name__=='__main__':
