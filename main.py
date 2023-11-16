@@ -234,7 +234,41 @@ def handle_disconnect():
     from_user_room_id=from_user.chat_room_id
     leave_room(from_user_room_id)
 
-    
+
+@app.route('/forgot_password',methods=['POST','GET'])
+def forgot_password():
+    if request.method=='POST':
+        username=request.form['username']
+        phone_number=request.form['phone_number']
+        email=request.form['email']
+        user_exists=Users.query.filter_by(username=username,phone_number=phone_number,email=email).first()
+        if user_exists:
+            return render_template('forgot_password.html', username=username,phone_number=phone_number,email=email, show_password_form=True)
+        else:
+            flash('Invalid credentials. Please check your username, phone number, and email.')
+            return render_template('forgot_password.html', show_password_form=False)
+    return render_template('forgot_password.html')
+
+@app.route("/reset_password",methods=['POST','GET'])
+def reset_password():
+    if request.method=='POST':    
+        username = request.form['username']
+        phone_number = request.form['phone_number']
+        email = request.form['email']   
+        new_password=request.form['new_password']        
+        password_pattern=r"^(?=.*\d)(?=.*[\W_]).*$"       
+        if not re.fullmatch(password_pattern,new_password):
+            flash("Password must contain atleast one digit and one symbol")
+            return render_template('forgot_password.html')  
+        else:
+            hashed_password = generate_password_hash(new_password)
+            user=Users.query.filter_by(username=username, email=email, phone_number=phone_number).first()
+            user.password=hashed_password
+            db.session.commit()
+            return redirect(url_for('login'))
+    return render_template('forgot_password.html')  
+ 
+   
 
 
 if __name__=='__main__':
