@@ -223,10 +223,6 @@
 
             })
             
-
-        // // Emit an event to the server to mark messages as read
-        // socketio.emit("mark_messages_as_read", { to_username: toUsername,unread_data:unread_data});
-
     }
 
     function updateMessageNotification(from_username, unread_messages_count) {
@@ -256,18 +252,6 @@
     var from_username = document.querySelector('h1').getAttribute('data-fromusername');
     fromUsername = from_username
     console.log(fromUsername, "Main fromuser")
-
-    // // Listen for the 'new_message_notification' event
-    // socketio.on('new_message_notification', function (data) {
-    //     // Update the UI with the updated unread messages count for the specified user
-    //     updateMessageNotification(data.to_username, data.unread_messages_count);
-    // });
-
-    // // Listen for the read message  event
-    // socketio.on('read_messages', function (data) {
-    //     // Update the UI with the updated unread messages count for the specified user
-    //     updateMessageNotification(data.to_username, data.unread_messages_count);
-    // });
 
 
     socketio.on('message', function (message) {

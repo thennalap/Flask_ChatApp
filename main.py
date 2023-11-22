@@ -283,31 +283,7 @@ def handle_message(payload):
     send(chat_message,to=from_user_room_id)
     send(chat_message_2,to=to_user_room_id)
 
-@socketio.on('mark_messages_as_read')
-def handle_messages_read(payload):
-    from_username=session['username']
-    to_username=payload['to_username']
-    unread_data=payload['unread_data']
-    print(unread_data)
-    #select from_user room id     
-    from_user=Users.query.filter_by(username=from_username).first()
-    from_user_room_id=from_user.chat_room_id
 
-    #select to_user room id
-    to_user=Users.query.filter_by(username=to_username).first()
-    to_user_room_id=to_user.chat_room_id
-
-    messages=Messages.query.filter(Messages.from_user==to_username,Messages.to_user==from_username).all()
-
-    for message in messages:
-        message.read_messages=True
-    db.session.commit()
-    
-    # Emit an event back to the client to update the UI
-    emit("read_messages", {
-        "to_username": to_username,
-        "unread_messages_count": 0
-    }, broadcast=True)
 
     
 
