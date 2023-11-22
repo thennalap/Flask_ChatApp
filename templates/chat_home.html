@@ -26,7 +26,7 @@
                     height="40" style="margin-left: 2%;margin-top: 2%;">
 
                 <h1 class="h3 mb-3" style="margin-left: 2%;" data-fromusername="{{login_user.username}}">{{
-                    login_user.name }}</h1>
+                    login_user.name }} {{message_count_dict}}</h1>
             </div>
             <div style="margin-left: 90%;margin-top: -3%;">
                 <a href="/logout">
@@ -40,7 +40,10 @@
                 <div class="col-12 col-lg-5 col-xl-3 border-right" style="height: 400px; overflow-y: auto;">
                     <div class="card">
                         {% for i in users %}
-                        <a href="" class="list-group-item list-group-item-action border-0 user-item">
+
+                        <a href="" class="list-group-item list-group-item-action border-0 user-item"
+                            id="user-row-{{ i.username }}">
+
                             <div class="py-2 px-4 border-bottom d-none d-lg-block">
                                 <div class="d-flex align-items-start" id="{{i.id}}" data-tousername="{{ i.username }}"
                                     data-name="{{i.name}}" style="margin-left: 2%;"
@@ -50,8 +53,10 @@
                                     <div class="flex-grow-1 ml-3"
                                         style="font-weight: bold; margin-left: 2%;margin-top: 2%;">
 
+
                                         {{ i.name }}
 
+                                        <span class="unread-messages-count badge bg-primary"></span>
 
                                     </div>
                                 </div>
@@ -75,7 +80,7 @@
                                             class="rounded-circle mr-1" alt="Sharon Lessman" width="40" height="40">
                                     </div>
 
-                                    <div class="flex-grow-1 pl-3">    <!--Here the slected User's name displays-->
+                                    <div class="flex-grow-1 pl-3"> <!--Here the slected User's name displays-->
                                         <p id="name" style="margin-top: 1%;margin-left: 2%;font-weight: bold;"></p>
                                     </div>
 
@@ -127,10 +132,40 @@
 
         </div><!--container end-->
     </main>
+
 </body>
+
 </html>
 
 <script>
+    var unread_data
+    var toUsername = null
+    document.addEventListener('DOMContentLoaded', function () {
+        // Make a request to the login API endpoint
+        fetch('getUnreadMessagesCount/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+
+        })
+            .then(response => response.json())
+            .then(data => {
+                // Handle the response data
+                console.log(data);
+                unread_data = data
+                for (const [from_username, unread_messages_count] of Object.entries(data)) {
+                    updateMessageNotification(from_username, unread_messages_count);
+                }
+
+                // data.forEach(user => {
+                //     updateMessageNotification(user.from_username, user.unread_messages_count);
+                // });
+
+            })
+
+    });
+
     function selectedUser(event) {
         event.preventDefault();
         // Access the id and data-username attributes
@@ -138,14 +173,14 @@
         var id = element.getAttribute("id");
         var to_username = element.getAttribute("data-tousername");
         var name = element.getAttribute("data-name")
-
         toUsername = to_username;
+
 
         // Update the <p> element with the retrieved name value
         document.getElementById("name").textContent = name;
 
-        
-        fetch('getMessages/' , {
+
+        fetch('getMessages/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -167,8 +202,47 @@
 
                 document.getElementById("chat-screen-home").style.display = "none";
             })
+
+
+            fetch('mark_messages_as_read/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ "to_username": toUsername,"unread_data":unread_data}),
+        })
+            .then(response => response.json())  // Assuming the response is JSON
+            .then(data => {
+                // Handle the response data
+                console.log(data);
+                unread_data = data
+                for (const [from_username, unread_messages_count] of Object.entries(data)) {
+                    updateMessageNotification(from_username, unread_messages_count);
+                }
+                         
+
+            })
+            
+
+        // // Emit an event to the server to mark messages as read
+        // socketio.emit("mark_messages_as_read", { to_username: toUsername,unread_data:unread_data});
+
     }
 
+    function updateMessageNotification(from_username, unread_messages_count) {
+        console.log(from_username)
+        console.log(unread_messages_count)
+        var userRow = document.getElementById('user-row-' + from_username);
+
+        if (userRow) {
+            var unreadCountElement = userRow.querySelector('.unread-messages-count');
+
+            if (unreadCountElement) {
+                unreadCountElement.textContent = unread_messages_count;
+                unreadCountElement.style.display = unread_messages_count > 0 ? 'inline-block' : 'none';
+            }
+        }
+    }
 
     function scrollToLatestMessage() {
         var messagesContainer = document.getElementById("msgs-container");
@@ -179,12 +253,80 @@
 
 <script>
     var socketio = io();
-    
+    var from_username = document.querySelector('h1').getAttribute('data-fromusername');
+    fromUsername = from_username
+    console.log(fromUsername, "Main fromuser")
+
+    // // Listen for the 'new_message_notification' event
+    // socketio.on('new_message_notification', function (data) {
+    //     // Update the UI with the updated unread messages count for the specified user
+    //     updateMessageNotification(data.to_username, data.unread_messages_count);
+    // });
+
+    // // Listen for the read message  event
+    // socketio.on('read_messages', function (data) {
+    //     // Update the UI with the updated unread messages count for the specified user
+    //     updateMessageNotification(data.to_username, data.unread_messages_count);
+    // });
+
+
     socketio.on('message', function (message) {
-        // Handle the received message 
-        createChatItem(message);
-        scrollToLatestMessage();
+        if (toUsername != null) {
+            if ((message.from_user == fromUsername && message.to_user == toUsername) ||
+                (message.from_user == toUsername && message.to_user == fromUsername)) {
+
+                // Handle the received message 
+                createChatItem(message);
+                scrollToLatestMessage();
+                if (message.self == false) {
+                    console.log("entered in");
+                    fetch('setStatus/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ "message_id": message.message_id }),
+                    })
+                        .then(response => response.json())
+                } // Assuming the response is JSON
+
+            }
+            else {
+                console.log(unread_data)
+                console.log(message)
+                keys = Object.keys(unread_data)
+                console.log(keys)
+                for (i = 0; i < keys.length; i++) {
+                    if (keys[i] == message.from_user) {
+                        unread_data[keys[i]] += 1
+                        console.log(unread_data)
+                        for (const [from_username, unread_messages_count] of Object.entries(unread_data)) {
+                            updateMessageNotification(from_username, unread_messages_count);
+                        }
+                    }
+                }
+
+
+            }
+        } else {
+            console.log(unread_data, "unread")
+            console.log("outer else case")
+            keys = Object.keys(unread_data)
+                console.log(keys)
+                for (i = 0; i < keys.length; i++) {
+                    if (keys[i] == message.from_user) {
+                        unread_data[keys[i]] += 1
+                        console.log(unread_data)
+                        for (const [from_username, unread_messages_count] of Object.entries(unread_data)) {
+                            updateMessageNotification(from_username, unread_messages_count);
+                        }
+                    }
+                }
+        }
+
+
     });
+
 
 
     function createChatItem(message) {
@@ -193,6 +335,7 @@
         var fromUsername = message.from_user;
         var text = message.content;
         var time = message.message_time;
+
 
         // Create a div to hold the message content, date, and time
         var messageContentDiv = document.createElement('div');
@@ -228,11 +371,8 @@
         messageElement.style.padding = '10px';
         messageElement.style.marginBottom = '10px';
         messageElement.style.width = '40%';
-
         messages.appendChild(messageElement);
         messages.scrollTop = messages.scrollHeight;
-
-
     }
 
     function sendMessage() {
@@ -241,7 +381,7 @@
         const msgInput = document.getElementById('message-input');
 
         if (msgInput.value === "") return;
-        
+
         var msg = msgInput.value;
         socketio.emit("message", {
             'message': msg,
@@ -251,8 +391,8 @@
         msgInput.value = "";
     }
 
-     // Add an event listener for click on the "Send" button
-     document.getElementById('send-btn').addEventListener('click', function () {
+    // Add an event listener for click on the "Send" button
+    document.getElementById('send-btn').addEventListener('click', function () {
         sendMessage();
     });
 
